@@ -126,7 +126,7 @@ function getMockups() {
     });
 }
 window.onload = async () => {
-    window.serverAdd = (await (await fetch("/serverData.json")).json()).ip;
+    window.serverAdd = (await (await fetch("https://spaceships-server-1.glitch.me/serverData.json")).json()).ip;
     if (Array.isArray(window.serverAdd)) {
         window.isMultiserver = true;
         const servers = window.serverAdd;
