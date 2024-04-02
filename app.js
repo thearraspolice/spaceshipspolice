@@ -240,7 +240,7 @@ window.onload = async () => {
                   document.getElementById("startButton").textContent =
                     "Loading mockups...";
                 }
-              }, 200);
+              }, 100);
         }
       }
       document.getElementById("startButton").onclick = () =>
