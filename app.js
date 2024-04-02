@@ -167,7 +167,6 @@ window.onload = async () => {
             Array.from(myServer.children)[0].onclick();
         }
     } else {
-        getMockups();
         util.pullJSON("gamemodeData").then((json) => {
             document.getElementById("serverName").innerHTML = `<h4 class="nopadding">${json.gameMode} | ${json.players} Players</h4>`;
         });
@@ -194,13 +193,64 @@ window.onload = async () => {
         document.getElementById("optBorders").value = "normal";
     }
     // Game start stuff
-    document.getElementById("startButton").onclick = () => startGame();
-    document.onkeydown = (e) => {
-        var key = e.which || e.keyCode;
-        if (key === global.KEY_ENTER && (global.dead || !global.gameLoading)) {
-            startGame();
+    function startGameWaitDefender() {
+        if (global.AlreadyStarting) return;
+        global.AlreadyStarting = true; // this prevents to crash the game
+        global.canLoad = false;
+        getMockups(); // Get the mockups before starting the game.
+        if (global.isAlerted) {
+            document.getElementById("startButton").textContent =
+        "Cannot start game! (Please reload the page)."; }
+        else {
+            let mockupwait = setInterval(() => {
+                if (global.canLoad) {
+                  document.getElementById("startButton").textContent = "Play";
+                  startGame();
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                  clearInterval(mockupwait);
+                } else {
+                  if (global.isAlerted) {
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      clearInterval(mockupwait);
+                      document.getElementById("startButton").textContent =
+                      "Failed to load mockups!";
+                      setTimeout(() => {
+                          document.getElementById("startButton").textContent =
+                          "Play";
+                      }, 2000)
+                  }
+                  document.getElementById("startButton").textContent =
+                    "Loading mockups...";
+                }
+              }, 200);
         }
-    };
+      }
+      document.getElementById("startButton").onclick = () =>
+        startGameWaitDefender();
+      document.onkeydown = (e) => {
+        var key = e.which || e.keyCode;
+        if (key === global.KEY_ENTER && (global.dead || !global.gameStart)) {
+          startGameWaitDefender();
+        }
+      };
     window.addEventListener("resize", resizeEvent);
     resizeEvent();
 };
