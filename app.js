@@ -102,6 +102,8 @@ global.player = {
     screenHeight: global.screenHeight,
     nameColor: "#ffffff",
 };
+document.getElementById("antivpn").style.display = "none";
+document.getElementById("banvpn").style.display = "none";
 var upgradeSpin = 0,
     lastPing = 0,
     renderTimes = 0;
