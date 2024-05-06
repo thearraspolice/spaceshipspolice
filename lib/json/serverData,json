@@ -1,10 +1,12 @@
 [
     {
         "gameMode": "Forge",
+        "name": "Forge",
         "ip": "h5s8j2-53051.csb.app"
     },
     {
-       "gameMode": "",
+       "gameMode": "2TDM",
+       "name": "2TDM",
        "ip": "h5s8j2-26301.csb.app"
     }   
 ]
