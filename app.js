@@ -119,6 +119,7 @@ global.player = global.player;
 global.canUpgrade = false;
 global.canSkill = false;
 global.message = "";
+global.connectingmsg = "Connecting...";
 global.time = 0;
 // Window setup <3
 global.mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent);
@@ -1968,7 +1969,7 @@ const gameDrawBeforeStart = () => {
     clearScreen(color.white, 0.5);
     let shift = animations.connecting.get();
     ctx.translate(0, -shift * global.screenHeight);
-    drawText("Connecting...", global.screenWidth / 2, global.screenHeight / 2, 30, color.guiwhite, "center");
+    drawText(global.connectingmsg, global.screenWidth / 2, global.screenHeight / 2, 30, color.guiwhite, "center");
     drawText(global.message, global.screenWidth / 2, global.screenHeight / 2 + 30, 15, color.lgreen, "center");
     ctx.translate(0, shift * global.screenHeight);
 };
