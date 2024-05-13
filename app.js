@@ -107,6 +107,12 @@ document.getElementById("banvpn").style.display = "none";
 var upgradeSpin = 0,
     lastPing = 0,
     renderTimes = 0;
+    setInterval(() => {
+        if (global.travelling) {
+          lastPing = 0;
+          renderTimes = 0;
+        }
+      }, 100)
 global.clearUpgrades = () => gui.upgrades = [];
 // Build the leaderboard object
 global.player = global.player;
@@ -1997,7 +2003,7 @@ function animloop() {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     // Draw the game
-    if (global.gameStart && !global.disconnected) {
+    if (global.gameStart && !global.disconnected && !global.travelling) {
         global.time = getNow();
         if (global.time - lastPing > 1000) {
             // Latency
