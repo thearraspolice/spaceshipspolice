@@ -2066,7 +2066,7 @@ const gameDrawAlive = (ratio, drawRatio) => {
         py = ratio * global.player.rendery;
 
     // Get the player's target
-    calculateTarget();
+    if (!global.mobile) calculateTarget();
 
     //draw the in game stuff
     drawFloor(px, py, ratio);
