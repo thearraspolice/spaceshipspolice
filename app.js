@@ -1509,7 +1509,7 @@ function drawUpgradeTree(spacing, alcoveSize) {
     ctx.strokeText(text, global.screenWidth / 2 - w / 2, innerHeight * 0.04);
 }
 
-function drawMessages(spacing) {
+function drawMessages(spacing, alcoveSize) {
     // Draw messages
     let vspacing = 4;
     let len = 0;
