@@ -1743,6 +1743,10 @@ function drawMinimapAndDebug(spacing, alcoveSize) {
     //minimap stuff starts here
     let len = alcoveSize; // * global.screenWidth;
     let height = (len / global.gameWidth) * global.gameHeight;
+    if (global.mobile) {
+        height = (len / global.gameWidth / 1.9) * global.gameHeight
+        len = alcoveSize * 0.6;
+      }
     if (global.gameHeight > global.gameWidth || global.gameHeight < global.gameWidth) {
         let ratio = [
             global.gameWidth / global.gameHeight,
