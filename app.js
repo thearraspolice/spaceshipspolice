@@ -74,6 +74,7 @@ class Animation {
 let animations = window.animations = {
     connecting: new Animation(1, 0),
     disconnected: new Animation(1, 0),
+    MobileStatMenu: new Animation(0, 1, 0.01),
     deathScreen: new Animation(1, 0),
     error: new Animation(1, 0),
 };
@@ -304,25 +305,66 @@ function Smoothbar(value, speed, sharpness = 3, lerpValue = 0.025) {
         },
     };
 }
-global.player = {
-    vx: 0,
-    vy: 0,
-    lastvx: 0,
-    lastvy: 0,
-    renderx: global.player.cx,
-    rendery: global.player.cy,
-    lastx: global.player.x,
-    lasty: global.player.y,
-    cx: 0,
-    cy: 0,
-    screenx: 0,
-    screeny: 0,
-    target: calculateTarget(),
-    name: "",
-    lastUpdate: 0,
-    time: 0,
-    nameColor: "#ffffff",
-};
+function mobileSmoothbar(value, speed, sharpness = 3, lerpValue = 0.025) {
+    let time = Date.now();
+    let display = value;
+    let oldvalue = value;
+    return {
+        set: (val) => {
+            if (value !== val) {
+                oldvalue = display;
+                value = val;
+                time = Date.now();
+            }
+        },
+        get: (round = false) => {
+            display = util.lerp(display, value, lerpValue);
+            if (Math.abs(value - display) < 0.1 && round) display = value;
+            return display;
+        },
+        force: (val) => {
+            display = value = val;
+        },
+    };
+}
+if (global.mobile) {
+    global.player = {
+      vx: 0,
+      vy: 0,
+      lastvx: 0,
+      lastvy: 0,
+      renderx: global.player.cx,
+      rendery: global.player.cy,
+      lastx: global.player.x,
+      lasty: global.player.y,
+      cx: 0,
+      cy: 0,
+      target: window.canvas.target,
+      name: "",
+      lastUpdate: 0,
+      time: 0,
+      nameColor: "#ffffff",
+    };
+  }
+  if (!global.mobile) {
+    global.player = {
+      vx: 0,
+      vy: 0,
+      lastvx: 0,
+      lastvy: 0,
+      renderx: global.player.cx,
+      rendery: global.player.cy,
+      lastx: global.player.x,
+      lasty: global.player.y,
+      cx: 0,
+      cy: 0,
+      target: calculateTarget(),
+      name: "",
+      lastUpdate: 0,
+      time: 0,
+      nameColor: "#ffffff",
+    };
+  }
 function calculateTarget() {
     global.target.x = global.mouse.x - (global.player.screenx / global.screenWidth * window.canvas.width + window.canvas.width / 2);
     global.target.y = global.mouse.y - (global.player.screeny / global.screenHeight * window.canvas.height + window.canvas.height / 2);
@@ -1068,6 +1110,7 @@ window.cancelAnimFrame = window.cancelAnimationFrame || window.mozCancelAnimatio
 // Drawing states
 const statMenu = Smoothbar(0, 0.7, 1.5, 0.1);
 const upgradeMenu = Smoothbar(0, 2, 3, 0.1);
+const MobileStatMenu = mobileSmoothbar(0, 4, 3, 0.1);
 // Define the graph constructor
 function graph() {
     var data = [];
@@ -1473,6 +1516,10 @@ function drawMessages(spacing) {
     let height = 18;
     let x = global.screenWidth / 2;
     let y = spacing;
+    if (global.mobile) {
+        y += global.canUpgrade ? gui.upgrades.length > 5 ? ((len / 6 + spacing) / 0.145) * upgradeMenu.get() : 0 : 0;
+        y += global.canSkill ? MobileStatMenu.get() * alcoveSize / 3 + spacing / 0.75 : 0;
+      }
     // Draw each message
     for (let i = global.messages.length - 1; i >= 0; i--) {
         let msg = global.messages[i],
@@ -1511,6 +1558,7 @@ function drawMessages(spacing) {
 
 function drawSkillBars(spacing, alcoveSize) {
     // Draw skill bars
+    if (global.mobile) return drawMobileSkillUpgrades(spacing, alcoveSize);
     global.canSkill = !!gui.points;
     statMenu.set(0 + (global.died || global.statHover || (global.canSkill && !gui.skills.every(skill => skill.cap === skill.amount))));
     global.clickables.stat.hide();
@@ -1589,7 +1637,77 @@ function drawSkillBars(spacing, alcoveSize) {
         drawText("x" + gui.points, Math.round(x + len - 2) + 0.5, Math.round(y + height - 4) + 0.5, 20, color.guiwhite, "right");
     }
 }
+function drawMobileSkillUpgrades(spacing, alcoveSize) {
+    global.canSkill = gui.points > 0 && gui.skills.some(s => s.amount < s.cap) * !global.canUpgrade;
+    MobileStatMenu.set(global.canSkill || global.died || global.disconnected ? 1 : 0);
+    let n = MobileStatMenu.get();
+    global.clickables.stat.hide();
+    let t = alcoveSize / 2,
+        q = alcoveSize / 3,
+        x = 2 * n * spacing - spacing,
+        statNames = gui.getStatNames(global.mockups[parseInt(gui.type.split("-")[0])].statnames),
+        clickableRatio = canvas.height / global.screenHeight / global.ratio;
+    if (global.canSkill) {
+        for (let i = 0; i < gui.skills.length; i++) {
+            let skill = gui.skills[i],
+                softcap = skill.softcap;
+            if (softcap <= 0) continue;
+            let amount = skill.amount,
+                skillColor = color[skill.color],
+                cap = skill.cap,
+                name = statNames[9 - i].split(/\s+/),
+                halfNameLength = Math.floor(name.length / 2),
+                [name1, name2] = name.length === 1 ? [name[0], null] : [name.slice(0, halfNameLength).join(" "), name.slice(halfNameLength).join(" ")];
 
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = skillColor;
+            drawGuiRect(x, spacing, t, 2 * q / 3);
+
+            ctx.globalAlpha = 0.1;
+            ctx.fillStyle = color.black;
+            drawGuiRect(x, spacing + q * 2 / 3 * 2 / 3, t, q * 2 / 3 / 3);
+
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = color.guiwhite;
+            drawGuiRect(x, spacing + q * 2 / 3, t, q / 3);
+
+            ctx.fillStyle = skillColor;
+            drawGuiRect(x, spacing + q * 2 / 3, t * amount / softcap, q / 3);
+
+            ctx.strokeStyle = color.black;
+            ctx.lineWidth = 1;
+            for (let j = 1; j < cap; j++) {
+                let width = x + j / softcap * t;
+                drawGuiLine(width, spacing + q * 2 / 3, width, spacing + q);
+            }
+
+            cap === 0 || !gui.points || softcap !== cap && amount === softcap || global.clickables.stat.place(9 - i, x * clickableRatio, spacing * clickableRatio, t * clickableRatio, q * clickableRatio);
+
+            if (name2) {
+                drawText(name2, x + t / 2, spacing + q * 0.55, q / 5, color.guiwhite, "center");
+                drawText(name1, x + t / 2, spacing + q * 0.3, q / 5, color.guiwhite, "center");
+            } else {
+                drawText(name1, x + t / 2, spacing + q * 0.425, q / 5, color.guiwhite, "center");
+            }
+
+            if (amount > 0) {
+                drawText(amount < softcap ? `+${amount}` : "MAX", x + t / 2, spacing + q * 1.3, q / 4, skillColor, "center");
+            }
+
+            ctx.strokeStyle = color.black;
+            ctx.globalAlpha = 1;
+            ctx.lineWidth = 3;
+            drawGuiLine(x, spacing + q * 2 / 3, x + t, spacing + q * 2 / 3);
+            drawGuiRect(x, spacing, t, q, true);
+
+            x += n * (t + 14);
+        }
+
+        if (gui.points > 1) {
+            drawText(`x${gui.points}`, x, spacing + 20, 20, color.guiwhite, "left");
+        }
+    }
+  }
 function drawSelfInfo(spacing, alcoveSize, max) {
     //rendering information
     let vspacing = 4.5;
@@ -1720,6 +1838,11 @@ function drawLeaderboard(spacing, alcoveSize, max) {
     let height = 14;
     let x = global.screenWidth - len - spacing;
     let y = spacing + height + 7;
+    if (!lb.data.length) return;
+    if (global.mobile) {
+        y += global.canUpgrade ? gui.upgrades.length > 8 ? ((len / 6 + spacing) / 0.455) * upgradeMenu.get() : 0 : 0;
+        y += global.canSkill ? MobileStatMenu.get() * alcoveSize / 3 + spacing / 0.75 : 0;
+      }
     drawText("Leaderboard", Math.round(x + len / 2) + 0.5, Math.round(y - 6) + 0.5, height + 3.5, color.guiwhite, "center");
     y += 7;
     for (let i = 0; i < lb.data.length; i++) {
@@ -1770,7 +1893,10 @@ function drawAvailableUpgrades(spacing, alcoveSize) {
         let clickableRatio = global.canvas.height / global.screenHeight / global.ratio;
         let lastBranch = -1;
         upgradeSpin += 0.01;
-
+        if (global.mobile) {
+            columnCount = Math.max(9, Math.ceil(gui.upgrades.length / 10));
+            internalSpacing = 10;
+          }
         for (let i = 0; i < gui.upgrades.length; i++) {
             let upgrade = gui.upgrades[i];
             let upgradeBranch = upgrade[0];
@@ -1854,7 +1980,76 @@ function drawAvailableUpgrades(spacing, alcoveSize) {
         global.clickables.skipUpgrades.hide();
     }
 }
-
+function drawMobileButtons(spacing, alcoveSize) {
+    // if (!global.mobile) return;
+    if (global.clickables.mobileButtons.active == null) global.clickables.mobileButtons.active = false;
+    if (global.clickables.mobileButtons.altFire == null) global.clickables.mobileButtons.altFire = false;
+    
+    // Hide the buttons
+    global.clickables.mobileButtons.hide();
+    
+    // Some sizing variables
+    let clickableRatio = global.canvas.height / global.screenHeight / global.ratio;
+    let upgradeColumns = Math.ceil(gui.upgrades.length / 10);
+    let yOffset = global.mobile ? global.canUpgrade ? (alcoveSize / 1.5 /*+ spacing * 2*/) * upgradeMenu.get() * upgradeColumns / 1.5 + spacing * (upgradeColumns + 1.55) + 77 : 0 + global.canSkill ? MobileStatMenu.get() * alcoveSize / 2.6 + spacing / 0.75 : 0 : 0;
+    let buttons;
+    let baseSize = (alcoveSize - spacing * 2) / 3;
+    
+        function makeButton(index, x, y, width, height, text) {
+            // Set the clickable's position
+            global.clickables.mobileButtons.place(index, x * clickableRatio, y * clickableRatio, width * clickableRatio, height * clickableRatio);
+    
+            // Draw boxes
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = color.grey;
+            drawGuiRect(x, y, width, height);
+            ctx.globalAlpha = 0.1;
+            ctx.fillStyle = color.black;
+            drawGuiRect(x, y + height * 0.6, width, height * 0.4);
+            ctx.globalAlpha = 1;
+    
+            // Draw text
+            drawText(text, x + width / 2, y + height * 0.5, height * 0.6, color.guiwhite, "center", true);
+    
+            // Draw the borders
+            ctx.strokeStyle = color.black;
+            ctx.lineWidth = 3;
+            drawGuiRect(x, y, width, height, true);
+        };
+    
+        function makeButtons(buttons, startX, startY, baseSize) {
+            let x, y, index = 0;
+    
+            let resetX = () => x = startX;
+            let resetY = () => y = startY;
+    
+            resetX();
+            resetY();
+    
+            for (let row = 0; row < buttons.length; row++) {
+                for (let col = 0; col < buttons[row].length; col++) {
+                    //console.log(buttons[row][col][0], buttons[row][col][3] ?? index);
+                    makeButton(buttons[row][col][3] ?? index, x, y, baseSize * (buttons[row][col][1] ?? 1), baseSize * (buttons[row][col][2] ?? 1), buttons[row][col][0]);
+                    x += baseSize * (buttons[row][col][1] ?? 1) + spacing;
+                    index++;
+                }
+    
+                resetX();
+                y += Math.max(...buttons[row].map(b => baseSize * (b[2] ?? 1))) + spacing;
+            }
+        }
+        buttons = global.clickables.mobileButtons.active ? [
+            [[global.clickables.mobileButtons.active ? "-" : "+"], [`Alt ${global.clickables.mobileButtons.altFire ? "Manual" : "Disabled"}`, 6], ["Full Screen", 5]],
+            [["Autofire", 3.5], ["Reverse", 3.5], ["Self-Destruct", 5]],
+            [["Autospin", 3.5], ["Override", 3.5], ["Level Up", 5]],
+            [["Action", 3.5], /*["Special", 3.5],*/ ["Chat", 5]],
+        ] : [
+            [[global.clickables.mobileButtons.active ? "-" : "+"]],
+        ];
+       if (global.clickables.mobileButtons.altFire) buttons.push([["\u2756", 2, 2]]);
+    
+       makeButtons(buttons, spacing * 2, yOffset + spacing, baseSize);
+    }
 const gameDrawAlive = (ratio, drawRatio) => {
     let GRAPHDATA = 0;
     // Prep stuff
@@ -1888,12 +2083,35 @@ const gameDrawAlive = (ratio, drawRatio) => {
     if (global.showTree) {
         drawUpgradeTree(spacing, alcoveSize);
     } else {
+        if (global.mobile) {
+            // draw joysticks if needed.
+            let radius = Math.min(global.screenWidth * 0.6, global.screenHeight * 0.12);
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(
+              (global.screenWidth * 1) / 6,
+              (global.screenHeight * 2) / 3,
+              radius,
+              0,
+              2 * Math.PI
+            );
+            ctx.arc(
+              (global.screenWidth * 5) / 6,
+              (global.screenHeight * 2) / 3,
+              radius,
+              0,
+              2 * Math.PI
+            );
+            ctx.fill();
+          }
         drawMessages(spacing);
         drawSkillBars(spacing, alcoveSize);
         drawSelfInfo(spacing, alcoveSize, max);
         drawMinimapAndDebug(spacing, alcoveSize);
         drawLeaderboard(spacing, alcoveSize, max, lb);
         drawAvailableUpgrades(spacing, alcoveSize);
+        drawMobileButtons(spacing, alcoveSize);
     }
     global.metrics.lastrender = getNow();
 };
@@ -1960,7 +2178,7 @@ const gameDrawDead = () => {
     drawText("⌚ Survived for " + util.timeForHumans(Math.round(global.finalLifetime.get())), x - 170, y + 55, 16, color.guiwhite);
     drawText(getKills(), x - 170, y + 77, 16, color.guiwhite);
     drawText(getDeath(), x - 170, y + 99, 16, color.guiwhite);
-    drawText("(press enter to respawn)", x, y + 125, 16, color.guiwhite, "center");
+    drawText(global.mobile ? "(Tap to respawn)" : "(Press enter to respawn)", x, y + 125, 16, color.guiwhite, "center");
     ctx.translate(0, shift * global.screenHeight);
 };
 const gameDrawBeforeStart = () => {
