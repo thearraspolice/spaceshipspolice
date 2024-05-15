@@ -1981,7 +1981,7 @@ function drawAvailableUpgrades(spacing, alcoveSize) {
     }
 }
 function drawMobileButtons(spacing, alcoveSize) {
-    // if (!global.mobile) return;
+    if (!global.mobile) return;
     if (global.clickables.mobileButtons.active == null) global.clickables.mobileButtons.active = false;
     if (global.clickables.mobileButtons.altFire == null) global.clickables.mobileButtons.altFire = false;
     
