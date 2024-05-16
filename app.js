@@ -123,7 +123,8 @@ global.message = "";
 global.connectingmsg = "Connecting...";
 global.time = 0;
 // Window setup <3
-global.mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent);
+global.mobile = /Android|iPhone|BlackBerry/i.test(navigator.userAgent);
+global.unsupportedDevices = /webOS|iPad|iPod/i.test(navigator.userAgent);
 var serverName = "Connected";
 var provider = "Unknown";
 function getMockups() {
@@ -202,6 +203,10 @@ window.onload = async () => {
     if (document.getElementById("optBorders").value === "") {
         document.getElementById("optBorders").value = "normal";
     }
+    if (global.unsupportedDevices) {
+        alert("You're device is unsupported on arraspolice.IO!");
+        global.canLoad = false;
+        }
     // Game start stuff
     function startGameWaitDefender() {
         if (global.AlreadyStarting) return;
@@ -211,7 +216,10 @@ window.onload = async () => {
         if (global.isAlerted) {
             document.getElementById("startButton").textContent =
         "Cannot start game! (Please reload the page)."; }
-        else {
+        else if (global.unsupportedDevices) {
+            document.getElementById("startButton").textContent =
+            "Unsupported device!";
+        } else {
             let mockupwait = setInterval(() => {
                 if (global.canLoad) {
                   document.getElementById("startButton").textContent = "Play";
